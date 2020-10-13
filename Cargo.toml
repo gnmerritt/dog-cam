@@ -1,0 +1,8 @@
+[package]
+name = "dog-cam"
+version = "0.1.0"
+authors = ["nathan@gnmerritt.net"]
+edition = "2018"
+
+[dependencies]
+v4l = "0.10.2"
