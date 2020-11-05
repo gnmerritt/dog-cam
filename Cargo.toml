@@ -5,4 +5,5 @@ authors = ["nathan@gnmerritt.net"]
 edition = "2018"
 
 [dependencies]
+clap = "2.33.3"
 v4l = "0.10.2"

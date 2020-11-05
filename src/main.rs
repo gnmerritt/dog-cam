@@ -1,19 +1,24 @@
+use clap::{value_t, App, Arg, SubCommand};
+use std::fs::File;
+use std::io::prelude::*;
 use v4l::prelude::*;
 use v4l::FourCC;
 
-fn main() {
-    let mut dev = CaptureDevice::new(0).expect("Failed to open device");
+fn frame_writer(name: &str, num_frames: i32) -> Result<(), Box<dyn std::error::Error>> {
+    let mut dev = CaptureDevice::new(0)?;
 
     // Let's say we want to explicitly request another format
-    let mut fmt = dev.format().expect("Failed to read format");
+    let mut fmt = dev.format()?;
     fmt.width = 1920;
     fmt.height = 1080;
     fmt.fourcc = FourCC::new(b"YUYV");
-    dev.set_format(&fmt).expect("Failed to write format");
+    dev.set_format(&fmt)?;
 
     // The actual format chosen by the device driver may differ from what we
     // requested! Print it out to get an idea of what is actually used now.
     println!("Format in use:\n{}", fmt);
+
+    println!("Capturing {} frames to {}\n", num_frames, name);
 
     // Now we'd like to capture some frames!
     // First, we need to create a stream to read buffers from. We choose a
@@ -29,21 +34,30 @@ fn main() {
 
     // Create the stream, which will internally 'allocate' (as in map) the
     // number of requested buffers for us.
-    let mut stream = MmapStream::with_buffers(&mut dev, 4)
-        .expect("Failed to create buffer stream");
+    let mut stream = MmapStream::with_buffers(&mut dev, 4)?;
 
     // At this point, the stream is ready and all buffers are setup.
     // We can now read frames (represented as buffers) by iterating through
     // the stream. Once an error condition occurs, the iterator will return
     // None.
-    loop {
+    for i in 0..num_frames {
         let frame = stream.next().unwrap();
+        let filename = format!(
+            "{n}-{i}.{w}-{h}.yuyv",
+            n = name,
+            i = i,
+            w = fmt.width,
+            h = fmt.height
+        );
         println!(
-            "Buffer size: {}, seq: {}, timestamp: {}",
+            "Buffer size: {}, seq: {}, timestamp: {}  --> {}",
             frame.len(),
             frame.meta().sequence,
-            frame.meta().timestamp
+            frame.meta().timestamp,
+            filename,
         );
+        let mut file: File = File::create(filename)?;
+        file.write_all(frame.data())?;
 
         // To process the captured data, you can pass it somewhere else.
         // If you want to modify the data or extend its lifetime, you have to
@@ -51,4 +65,24 @@ fn main() {
         // zero-copy readers while enforcing a full clone of the data for
         // writers.
     }
+
+    Ok(())
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let matches = App::new("Dog Cam")
+        .subcommand(
+            SubCommand::with_name("capture")
+                .arg(Arg::with_name("name"))
+                .arg(Arg::with_name("frames")),
+        )
+        .get_matches();
+
+    if let Some(matches) = matches.subcommand_matches("capture") {
+        let name = matches.value_of("name").unwrap_or("frames/last");
+        let num_frames = value_t!(matches.value_of("frames"), i32).unwrap_or(30);
+        return frame_writer(name, num_frames);
+    }
+
+    Ok(())
 }
