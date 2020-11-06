@@ -13,3 +13,4 @@ v4l-libs = ["v4l"]
 clap = "2.33.3"
 v4l = { version = "0.10.2", optional = true }
 walkdir = "2.3.1"
+image = "0.23.11"
