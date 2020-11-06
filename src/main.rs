@@ -1,5 +1,6 @@
 mod v4l;
 mod replay;
+mod frame;
 
 use clap::{value_t, App, Arg, SubCommand};
 
@@ -22,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return v4l::frame_writer(name, num_frames);
     }
     if let Some(matches) = matches.subcommand_matches("process") {
-        let name = matches.value_of("name").unwrap_or("frames/last");        
+        let name = matches.value_of("name").unwrap_or("frames/last");
         return replay::process_from_disk(name);
     }
 
