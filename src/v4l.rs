@@ -11,7 +11,7 @@ fn frame_writer(name: &str, num_frames: i32) -> Result<(), Box<dyn std::error::E
     let mut fmt = dev.format()?;
     fmt.width = 1920;
     fmt.height = 1080;
-    fmt.fourcc = FourCC::new(b"YUYV");
+    fmt.fourcc = FourCC::new(b"RGBA");
     dev.set_format(&fmt)?;
 
     // The actual format chosen by the device driver may differ from what we
@@ -43,21 +43,25 @@ fn frame_writer(name: &str, num_frames: i32) -> Result<(), Box<dyn std::error::E
     for i in 0..num_frames {
         let frame = stream.next().unwrap();
         let filename = format!(
-            "{n}.{i}.{w}-{h}.yuyv",
+            "{n}.{i}.{w}-{h}",
             n = name,
             i = i,
             w = fmt.width,
             h = fmt.height
         );
+        let rgba = format!("{}.rgba", filename);
         println!(
             "Buffer size: {}, seq: {}, timestamp: {}  --> {}",
             frame.len(),
             frame.meta().sequence,
             frame.meta().timestamp,
-            filename,
+            rgba,
         );
-        let mut file: File = File::create(filename)?;
+        let mut file: File = File::create(rgba)?;
         file.write_all(frame.data())?;
+
+        let png = format!("{}.png", filename);
+        image::save_buffer(png, frame.data(), fmt.width, fmt.height, image::ColorType::Rgba16)?;
 
         // To process the captured data, you can pass it somewhere else.
         // If you want to modify the data or extend its lifetime, you have to
