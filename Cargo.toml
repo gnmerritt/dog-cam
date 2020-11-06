@@ -4,6 +4,11 @@ version = "0.1.0"
 authors = ["nathan@gnmerritt.net"]
 edition = "2018"
 
+[features]
+default = ["v4l-libs"]
+
+v4l-libs = ["v4l"]
+
 [dependencies]
 clap = "2.33.3"
-v4l = "0.10.2"
+v4l = { version = "0.10.2", optional = true }
