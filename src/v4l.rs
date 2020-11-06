@@ -43,7 +43,7 @@ fn frame_writer(name: &str, num_frames: i32) -> Result<(), Box<dyn std::error::E
     for i in 0..num_frames {
         let frame = stream.next().unwrap();
         let filename = format!(
-            "{n}-{i}.{w}-{h}.yuyv",
+            "{n}.{i}.{w}-{h}.yuyv",
             n = name,
             i = i,
             w = fmt.width,
